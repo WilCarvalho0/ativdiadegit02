@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Contato — Celular 3D</title>
+<style>
+  :root{
+    --bg:#0f1724;
+    --phone-frame:#0b1220;
+    --metal:#0f1727;
+    --screen:#0b1622;
+    --accent: #6ee7b7;
+    --muted: #94a3b8;
+    --glass: rgba(255,255,255,0.04);
+    --shadow: rgba(2,6,23,0.65);
+    --glass-highlight: rgba(255,255,255,0.06);
+    --radius: 28px;
+    --phone-w: 360px;
+    --phone-h: 720px;
+  }
+
+  /* Page background */
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:
+      radial-gradient(1200px 600px at 10% 10%, rgba(110,231,183,0.05), transparent 10%),
+      radial-gradient(900px 500px at 90% 90%, rgba(99,102,241,0.03), transparent 8%),
+      var(--bg);
+    color: #e6eef8;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:3rem;
+  }
+
+  /* Scene: perspective container */
+  .scene {
+    perspective: 1400px;
+    width: calc(var(--phone-w) * 1.1);
+    height: calc(var(--phone-h) * 1.1);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* Phone wrapper (the "open" phone - two halves visually) */
+  .phone {
+    width:var(--phone-w);
+    height:var(--phone-h);
+    position:relative;
+    transform-style:preserve-3d;
+    transition: transform 600ms cubic-bezier(.2,.9,.2,1);
+    transform: rotateX(6deg) rotateY(-20deg);
+  }
+
+  /* Outer frame */
+  .phone::before,
+  .phone::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius: calc(var(--radius) + 6px);
+    z-index:0;
+    pointer-events:none;
+  }
+
+  /* metal edge highlight */
+  .phone::before{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 20%),
+                linear-gradient(90deg, rgba(255,255,255,0.02), transparent 25%);
+    box-shadow:
+      0 20px 60px -20px var(--shadow),
+      inset 0 2px 10px rgba(255,255,255,0.02);
+    transform: translateZ(-42px);
+  }
+
+  /* subtle outer glow */
+  .phone::after{
+    border-radius: calc(var(--radius) + 18px);
+    filter: blur(18px);
+    background: linear-gradient(180deg, rgba(110,231,183,0.035), rgba(99,102,241,0.02));
+    opacity:.9;
+    transform: translateZ(-80px) scale(.98);
+  }
+
+  /* The actual 3D frame (front) */
+  .frame {
+    position:absolute;
+    inset:0;
+    border-radius:var(--radius);
+    background: linear-gradient(180deg, rgba(10,14,20,0.95), rgba(6,10,16,0.96));
+    box-shadow:
+      0 18px 40px -10px rgba(2,6,23,0.6),
+      inset 0 6px 18px rgba(255,255,255,0.02),
+      0 1px 0 rgba(255,255,255,0.02);
+    transform-style:preserve-3d;
+    overflow:visible;
+  }
+
+  /* top bezel and notch */
+  .frame .bezel {
+    position:absolute;
+    top:12px;
+    left:12px;
+    right:12px;
+    height:58px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    transform: translateZ(18px);
+  }
+
+  .notch{
+    width:120px;
+    height:28px;
+    border-radius:14px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(255,255,255,0.02));
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(255,255,255,0.02);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--muted);
+    font-size:12px;
+  }
+
+  /* camera dot */
+  .cam {
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #a3b0c6 25%, #0b1220 65%);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 -1px 2px rgba(255,255,255,0.06);
+  }
+
+  /* Screen (the visible surface) */
+  .screen {
+    position:absolute;
+    left:14px;
+    right:14px;
+    top:78px;
+    bottom:28px;
+    border-radius: calc(var(--radius) - 6px);
+    background: linear-gradient(180deg, rgba(1,10,18,0.98), rgba(4,12,20,0.98));
+    overflow:hidden;
+    transform: translateZ(28px) rotateX(2deg);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), inset 0 -30px 60px rgba(0,0,0,0.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 28px;
+  }
+
+  /* glass reflection */
+  .screen::before{
+    content:"";
+    position:absolute;
+    left:0;top:0;right:0;height:40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));
+    transform: translateY(-10%) skewX(-6deg);
+    pointer-events:none;
+    mix-blend-mode:overlay;
+  }
+
+  /* inner content card that looks like app UI */
+  .contact-card{
+    width:100%;
+    max-width:340px;
+    background: linear-gradient(180deg, rgba(8,18,29,0.86), rgba(4,10,18,0.6));
+    border-radius:18px;
+    padding:18px;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    transform: translateZ(40px) translateY(0);
+    backdrop-filter: blur(6px) saturate(120%);
+    color: #eaf6f1;
+    border: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .contact-card h1{
+    margin:0 0 6px 0;
+    font-size:20px;
+    letter-spacing: -0.2px;
+    color:#fff;
+  }
+  .contact-card p.lead{
+    margin:0 0 14px 0;
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  form .row{ display:flex; gap:10px; align-items:center; }
+  label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  input, textarea{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.04);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));
+    color: #eaf6f1;
+    font-size:14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    outline:none;
+    transition: box-shadow .18s ease, transform .12s ease;
+  }
+  input:focus, textarea:focus{
+    box-shadow: 0 6px 18px rgba(17,211,163,0.06);
+    transform: translateY(-2px);
+    border-color: rgba(110,231,183,0.14);
+  }
+  textarea{ min-height:110px; resize:vertical; }
+
+  .hint { font-size:12px; color:var(--muted); margin-top:8px; }
+  .actions { display:flex; gap:10px; margin-top:12px; align-items:center; }
+
+  button.primary{
+    padding:10px 14px;
+    border-radius:10px;
+    border: none;
+    cursor:pointer;
+    font-weight:600;
+    background: linear-gradient(180deg, rgba(110,231,183,0.16), rgba(110,231,183,0.08));
+    color: #042018;
+    box-shadow: 0 8px 20px rgba(110,231,183,0.06), inset 0 -2px 0 rgba(0,0,0,0.15);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  button.primary:active{ transform: translateY(2px) scale(.998); }
+  button.ghost{
+    background:transparent;
+    color:var(--muted);
+    border:1px solid rgba(255,255,255,0.03);
+    padding:8px 12px;
+    border-radius:10px;
+  }
+
+  /* tiny status message */
+  .status { font-size:13px; color: #a7f3d0; margin-top:8px; display:none; }
+
+  /* phone side button (3D metal) */
+  .side-button{
+    position:absolute;
+    right:-6px;
+    top:200px;
+    width:6px;height:40px;
+    border-radius:6px;
+    background: linear-gradient(180deg,#0f1724,#061018);
+    box-shadow: 1px 4px 10px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.02);
+    transform: translateZ(24px);
+  }
+
+  /* bottom home / speaker */
+  .homebar{
+    position:absolute;
+    left:0;right:0;bottom:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    transform: translateZ(30px);
+  }
+  .bar{
+    width:120px;height:6px;border-radius:999px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    box-shadow: rgba(0,0,0,0.6) 0 6px 16px -8px;
+  }
+
+  /* micro-animations */
+  .phone:hover{ transform: rotateX(8deg) rotateY(-4deg) translateY(-6px); }
+  .contact-card{ transition: transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .28s; }
+  .phone:hover .contact-card{ transform: translateZ(52px) translateY(-6px); box-shadow: 0 24px 60px rgba(2,6,23,0.6); }
+
+  /* error style */
+  .error { color:#ffb4b4; font-size:13px; margin-top:8px; display:none; }
+
+  /* responsive tweaks */
+  @media (max-width:420px){
+    :root{ --phone-w:320px; --phone-h:680px; }
+    .scene{ transform: translateY(-10px); }
+  }
+  @media (min-width:1200px){
+    .phone{ transform: rotateX(8deg) rotateY(-28deg) scale(1.06); }
+  }
+</style>
+</head>
+<body>
+  <div class="scene" role="img" aria-label="Simulação de celular 3D com página de contato">
+    <div class="phone" id="phone">
+      <div class="frame" aria-hidden="true">
+        <div class="bezel">
+          <div class="cam" aria-hidden="true"></div>
+          <div class="notch">Contato</div>
+        </div>
+        <div class="screen">
+          <div class="contact-card" role="region" aria-labelledby="contact-title">
+            <h1 id="contact-title">Fale Conosco</h1>
+            <p class="lead">Envie sua mensagem — responderemos em até 1 dia útil.</p>
+
+            <form id="contact-form" novalidate>
+              <div class="field">
+                <label for="name">Nome *</label>
+                <input id="name" name="name" type="text" required minlength="2" autocomplete="name" />
+              </div>
+
+              <div class="field" style="margin-top:10px;">
+                <label for="email">Email *</label>
+                <input id="email" name="email" type="email" required autocomplete="email" />
+              </div>
+
+              <div class="field" style="margin-top:10px;">
+                <label for="message">Mensagem *</label>
+                <textarea id="message" name="message" required minlength="10" placeholder="Escreva sua mensagem..."></textarea>
+              </div>
+
+              <div class="actions" style="margin-top:8px;">
+                <button type="submit" class="primary">Enviar</button>
+                <button type="reset" class="ghost" type="button">Limpar</button>
+              </div>
+
+              <div class="status" id="success">Mensagem enviada com sucesso!</div>
+              <div class="error" id="errors" role="status" aria-live="polite"></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="side-button" aria-hidden="true"></div>
+        <div class="homebar" aria-hidden="true"><div class="bar"></div></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Validação simples e UX
+  (function(){
+    const form = document.getElementById('contact-form');
+    const errorsEl = document.getElementById('errors');
+    const success = document.getElementById('success');
+
+    function validate(data){
+      const errs = [];
+      if (!data.name || data.name.trim().length < 2) errs.push('Nome deve ter ao menos 2 caracteres.');
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!data.email || !emailRe.test(data.email)) errs.push('Email inválido.');
+      if (!data.message || data.message.trim().length < 10) errs.push('Mensagem muito curta (mín 10 caracteres).');
+      return errs;
+    }
+
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      errorsEl.style.display = 'none';
+      success.style.display = 'none';
+
+      const data = {
+        name: form.name.value,
+        email: form.email.value,
+        message: form.message.value
+      };
+
+      const errs = validate(data);
+      if (errs.length){
+        errorsEl.innerHTML = errs.map(x=>`• ${x}`).join('<br>');
+        errorsEl.style.display = 'block';
+        return;
+      }
+
+      // Simula envio
+      const submitBtn = form.querySelector('button.primary');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enviando...';
+
+      setTimeout(()=>{
+        form.reset();
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enviar';
+        success.style.display = 'block';
+        // anima o "pop" na card para realçar sucesso
+        const card = document.querySelector('.contact-card');
+        card.animate([{ transform: 'translateZ(52px) scale(1.01)' }, { transform: 'translateZ(52px) scale(1)' }], { duration: 400, easing: 'cubic-bezier(.2,.9,.2,1)' });
+      }, 700);
+    });
+  })();
+</script>
+</body>
+</html>
+
